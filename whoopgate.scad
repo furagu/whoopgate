@@ -1,5 +1,6 @@
 $fn = 100;
 
+rotate([90, 0, 0])
 main(
     balloon_diameter = 40,
     thickness        = 3,
