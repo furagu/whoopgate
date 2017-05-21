@@ -4,15 +4,17 @@ main(
     balloon_diameter = 40,
     thickness        = 3,
     length           = 100,
-    holder_length    = 5,
-    clamp_length     = 5,
+    holder_length    = 4,
+    clamp_length     = 3,
     clamp_height     = 8,
     clamp_gap        = 0.5,
-    clamp_extra_cut  = 3
+    clamp_active_w   = 8
 );
 
 module main() {
-    cube(size=[length, balloon_diameter / 2, thickness]);
+    base_width = balloon_diameter / 3;
+
+    cube(size=[length, base_width, thickness]);
 
     holder_positions = [
         [0, 0],
@@ -29,25 +31,31 @@ module main() {
             );
     }
 
-    translate([(length - clamp_length) / 2, 0, balloon_diameter / 2 - clamp_height / 2 + thickness])
+    clamp_x = balloon_diameter * 0.8 + thickness;
+    clamp_y = balloon_diameter / 2 - clamp_height / 2 + thickness;
+
+    translate([clamp_x, 0, clamp_y])
         clamp(
-            l         = clamp_length,
-            w         = balloon_diameter,
-            h         = clamp_height,
-            gap       = clamp_gap,
-            extra_cut = clamp_extra_cut
+            balloon_diameter = balloon_diameter,
+            l                = clamp_length,
+            h                = clamp_height,
+            gap              = clamp_gap,
+            active_w         = clamp_active_w,
+            thickness        = thickness
         );
 
-    translate([(length - clamp_length) / 2, 0, 0])
-        cube(size=[clamp_length, balloon_diameter / 2, balloon_diameter / 2 + thickness - clamp_height / 2 + 0.1], center=false);
+    translate([clamp_x, 0, 0])
+        cube(size=[clamp_length, base_width, clamp_y + 0.1], center=false);
 }
 
 module clamp() {
+    w = balloon_diameter / 2 + thickness + active_w + h / 2;
+
     difference() {
         cube(size=[l, w, h]);
 
-        translate([-1, w / 2 - extra_cut, (h - gap) / 2])
-        cube(size=[l + 2, w / 2 + extra_cut, gap]);
+        translate([-1, balloon_diameter / 2 - active_w / 2 + thickness, (h - gap) / 2])
+            cube(size=[l + 2, w + 2, gap]);
 
         mouth_side = sqrt(h * h / 2);
 
@@ -56,7 +64,6 @@ module clamp() {
             cube(size=[l + 2, mouth_side, mouth_side], center=true);
     }
 }
-
 
 module balloon_holder() {
     holder_side = (r + thickness) * 2;
