@@ -8,15 +8,15 @@ function bless(x) = floor(x / THE_BLESSED_NUMBER) * THE_BLESSED_NUMBER;
 gate_d = 35 - 3;
 t = 3;
 
-leg_l = 2;
+leg_l = 2.5;
 leg_w = 4;
 leg_h = 6;
 
 tolerance = 0.25;
 
-for(pos = [[90, 30, 0], [90, -30, 0]]) {
+for(pos = [[30, 50, 0], [30, 10, 0]]) {
     translate(pos)
-    gate_clamp(
+    clamp(
         d = gate_d,
         t = t,
         h = leg_l,
@@ -27,96 +27,141 @@ for(pos = [[90, 30, 0], [90, -30, 0]]) {
 }
 
 // intersection() {
-    // translate([53, 0, 0])
-    // cube([200, 200, 8], true);
+//     translate([53, 0, 0])
+//     cube([200, 200, 8], true);
 
+    rotate([0, 0, 90])
     stand(
-        support_h = 40,
+        support_h = 30,
         leg_w = leg_w,
         leg_l = leg_l,
-        support_well=leg_h + tolerance * 2,
-
-        clamp_r = gate_d / 2 + t,
-
-        arm_l = 100,
+        leg_h = leg_h,
 
         t = t,
-        h = 1
+
+        base_l = 60,
+        base_w = 50,
+        base_h = 1,
+        arm_w = 6,
+
+        stiffener_h = 2.5,
+        stiffener_w = bless(1),
+        stiffener_r = 0.5
     );
 // }
 
 module stand() {
-    stiffener_h = 2.5;
-    stiffener_w = bless(1);
+    base(
+        l = base_l,
+        w = base_w,
+        h = base_h,
 
-    arm_w = leg_w + t * 2;
+        arm_w = arm_w,
 
-    center_r = arm_w / 4;
+        stiffener_w = stiffener_w,
+        stiffener_h = stiffener_h,
+        stiffener_r = stiffener_r
+    );
 
-    support_l = leg_l + tolerance + THE_BLESSED_NUMBER * 4;
-    support_w = leg_w + tolerance + THE_BLESSED_NUMBER * 4;
+    for(x = [arm_w / 2, base_l - arm_w / 2]) {
+        translate([x, base_w / 2, 0]) {
+            difference() {
+                support(
+                    h = support_h,
 
-    cut_l = leg_l + tolerance;
-    cut_w = leg_w + tolerance;
+                    arm_w = arm_w,
+                    arm_l = base_l / 4,
+                    arm_h = base_h,
 
-    difference() {
-        union() {
-            for(a = [0, 90]) {
-                rotate([0, 0, a])
-                translate([-arm_l / 2, -arm_w / 2, 0])
-                arm(
-                    l = arm_l,
-                    w = arm_w,
-                    h = h,
                     stiffener_w = stiffener_w,
-                    stiffener_h = stiffener_h
+
+                    leg_l = leg_l,
+                    leg_w = leg_w,
+                    leg_h = leg_h,
+
+                    clamp_h = t
                 );
-            }
 
-            translate([0, 0, h])
-                cylinder(h=stiffener_h, r=center_r);
-
-            for(x = [arm_l / 2, -arm_l / 2]) {
-                translate([x, 0, 0]) {
-                    difference() {
-                        translate([-support_l / 2, - support_w / 2, 0])
-                            cube([support_l, support_w, support_h]);
-
-                        translate([-cut_l / 2, 0, clamp_r + support_h - t])
-                        rotate([0, 90, 0])
-                            cylinder(h=cut_l, r=clamp_r);
-
-                    }
+                for(y = [arm_w, -base_w - arm_w]) {
+                    translate([-arm_w, y, 0])
+                        cube(size=[arm_w * 2, base_w, base_h + stiffener_h]);
                 }
             }
         }
+    }
+}
 
+module base() {
+    arm_r = arm_w / 2;
 
-        for(x = [arm_l / 2 - cut_l / 2, -arm_l / 2 - cut_l / 2]) {
-            translate([x, -cut_w / 2, support_h - support_well - t - tolerance]) {
-                cube(size=[cut_l, cut_w, support_well + t + tolerance + 1]);
-            }
+    linear_extrude(h)
+    difference() {
+        translate([arm_r, arm_r])
+        offset(r=arm_r)
+            square([l - arm_r * 2, w - arm_r * 2]);
+
+        translate([arm_w, arm_w])
+            square([l - arm_w * 2, w - arm_w * 2]);
+    }
+
+    translate([arm_w / 2 - stiffener_w / 2, arm_w / 2 - stiffener_w / 2, h])
+    linear_extrude(stiffener_h)
+    translate([stiffener_w + stiffener_r, stiffener_w + stiffener_r])
+        difference(){
+            offset(r=stiffener_r + stiffener_w)
+                square([l - arm_w - stiffener_r * 2 - stiffener_w, w - arm_w - stiffener_r * 2 - stiffener_w]);
+
+            offset(r=stiffener_r)
+                square([l - arm_w - stiffener_r * 2 - stiffener_w, w - arm_w - stiffener_r * 2 - stiffener_w]);
         }
-    }
 }
 
-module arm() {
-    middle_w = w * 0.6;
+module support() {
+    hull(){
+        translate([arm_l - arm_w / 2, 0, 0])
+            cylinder(h=arm_h, r=arm_w / 2);
 
-    translate([0, (w - middle_w) / 2, 0])
-        cube(size=[l, middle_w, h]);
-
-    for(x = [0, l]) {
-        translate([x, w / 2, 0])
-            cylinder(r=w / 2, h=h);
+        translate([-arm_l + arm_w / 2, 0, 0])
+            cylinder(h=arm_h, r=arm_w / 2);
     }
 
-    translate([ 0, (w - stiffener_w) / 2, h])
-        chamferCube(l, stiffener_w, stiffener_h, 1, [0, 0, 0, 0], [0, 1, 1, 0], [0, 0, 0, 0]);
+    stiffener_l = arm_l - arm_w / 2;
+    stiffener_h = h * 0.5;
+    a = atan(stiffener_h / stiffener_l);
+
+    for(r = [0, 90, 180, 270]) {
+        rotate([0, 0, r])
+        translate([0, -stiffener_w / 2, arm_h])
+            difference() {
+                cube([stiffener_l, stiffener_w, stiffener_h]);
+
+                translate([0, -1, stiffener_h])
+                rotate([0, a, 0])
+                    cube(size=[stiffener_l * 2, stiffener_w + 2, stiffener_l * 2]);
+            }
+    }
+
+    tower_l = leg_l + tolerance + THE_BLESSED_NUMBER * 4;
+    tower_w = leg_w + tolerance + THE_BLESSED_NUMBER * 4;
+
+    cut_l = leg_l + tolerance;
+    cut_w = leg_w + tolerance;
+    cut_h = leg_h + tolerance;
+
+    difference() {
+        translate([-tower_l / 2, - tower_w / 2, 0])
+            cube([tower_l, tower_w, h]);
+
+        translate([-cut_l / 2, -tower_w / 2 - 1, h - clamp_h])
+            cube(size=[cut_l, tower_w + 2, clamp_h + 1]);
+
+        translate([-cut_l / 2, -cut_w / 2, h - cut_h - clamp_h])
+            cube(size=[cut_l, cut_w, cut_h + clamp_h + 1]);
+    }
+
 }
 
-
-module gate_clamp() {
+module clamp() {
     inner_r = d / 2;
     outer_r = inner_r + t;
 
