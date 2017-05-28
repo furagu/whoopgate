@@ -5,48 +5,59 @@ $fn = 100;
 THE_BLESSED_NUMBER = 0.402;
 function bless(x) = floor(x / THE_BLESSED_NUMBER) * THE_BLESSED_NUMBER;
 
-gate_d = 35 - 2;
+gate_d = 35 - 3;
 t = 3;
 
-leg_w = 3;
-leg_l = 3;
+leg_l = 2;
+leg_w = 4;
 leg_h = 6;
 
-tolerance = 0.5;
+tolerance = 0.25;
 
-for(pos = [[35, 30, 0], [-25, -30, 0]]) {
+for(pos = [[90, 30, 0], [90, -30, 0]]) {
     translate(pos)
     gate_clamp(
         d = gate_d,
         t = t,
-        h = leg_w,
+        h = leg_l,
         pin_l = leg_h,
-        pin_w = leg_l,
-        cut_angle = 100
+        pin_w = leg_w,
+        cut_angle = 90
     );
 }
 
-stand(
-    support_h = 30,
-    support_w = leg_w,
-    support_l = leg_l,
-    support_well=leg_h,
+// intersection() {
+    // translate([53, 0, 0])
+    // cube([200, 200, 8], true);
 
-    clamp_r = gate_d / 2 + t,
+    stand(
+        support_h = 40,
+        leg_w = leg_w,
+        leg_l = leg_l,
+        support_well=leg_h + tolerance * 2,
 
-    arm_l = 100,
+        clamp_r = gate_d / 2 + t,
 
-    t = bless(2)
-);
+        arm_l = 100,
+
+        t = t,
+        h = 1
+    );
+// }
 
 module stand() {
     stiffener_h = 2.5;
     stiffener_w = bless(1);
 
-    arm_w = support_w + t * 4;
+    arm_w = leg_w + t * 2;
 
-    center_r = arm_w / 2.2;
-    support_r = max(support_l, support_w) + t + tolerance;
+    center_r = arm_w / 4;
+
+    support_l = leg_l + tolerance + THE_BLESSED_NUMBER * 4;
+    support_w = leg_w + tolerance + THE_BLESSED_NUMBER * 4;
+
+    cut_l = leg_l + tolerance;
+    cut_w = leg_w + tolerance;
 
     difference() {
         union() {
@@ -56,36 +67,34 @@ module stand() {
                 arm(
                     l = arm_l,
                     w = arm_w,
-                    h = t,
+                    h = h,
                     stiffener_w = stiffener_w,
                     stiffener_h = stiffener_h
                 );
             }
 
-            cylinder(h=stiffener_h + t, r=center_r);
-
-            support_full_l = support_l + t * 2;
-            support_full_w = support_w + t * 2;
+            translate([0, 0, h])
+                cylinder(h=stiffener_h, r=center_r);
 
             for(x = [arm_l / 2, -arm_l / 2]) {
                 translate([x, 0, 0]) {
                     difference() {
-                        cylinder(h=support_h, r=min(support_full_l, support_full_w) / 2);
+                        translate([-support_l / 2, - support_w / 2, 0])
+                            cube([support_l, support_w, support_h]);
 
-                        translate([-(support_l + tolerance) / 2, 0, clamp_r + support_h - t])
+                        translate([-cut_l / 2, 0, clamp_r + support_h - t])
                         rotate([0, 90, 0])
-                            cylinder(h=support_l + tolerance, r=clamp_r);
+                            cylinder(h=cut_l, r=clamp_r);
+
                     }
                 }
             }
         }
 
-        translate([0, 0, -1])
-            cylinder(h=stiffener_h + t + 2, r=center_r - stiffener_w);
 
-        for(x = [arm_l / 2 - support_l / 2, -arm_l / 2 - support_l / 2]) {
-            translate([x, -support_w / 2, support_h - support_well - t - tolerance]) {
-                cube(size=[support_l, support_w, support_well + t + tolerance]);
+        for(x = [arm_l / 2 - cut_l / 2, -arm_l / 2 - cut_l / 2]) {
+            translate([x, -cut_w / 2, support_h - support_well - t - tolerance]) {
+                cube(size=[cut_l, cut_w, support_well + t + tolerance + 1]);
             }
         }
     }
@@ -102,8 +111,8 @@ module arm() {
             cylinder(r=w / 2, h=h);
     }
 
-    translate([ -w / 2, (w - stiffener_w) / 2, h])
-        chamferCube(l + w, stiffener_w, stiffener_h, w / 2, [0, 0, 0, 0], [0, 1, 1, 0], [0, 0, 0, 0]);
+    translate([ 0, (w - stiffener_w) / 2, h])
+        chamferCube(l, stiffener_w, stiffener_h, 1, [0, 0, 0, 0], [0, 1, 1, 0], [0, 0, 0, 0]);
 }
 
 
