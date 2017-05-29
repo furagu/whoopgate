@@ -63,8 +63,9 @@ module stand() {
         stiffener_r = stiffener_r
     );
 
-    for(x = [arm_w / 2, base_l - arm_w / 2]) {
-        translate([x, base_w / 2, 0]) {
+    for(xa = [[arm_w / 2, 0], [base_l - arm_w / 2, 180]]) {
+        translate([xa[0], base_w / 2, 0]) {
+        rotate([0, 0, xa[1]])
             difference() {
                 support(
                     h = support_h,
@@ -104,6 +105,12 @@ module base() {
             square([l - arm_w * 2, w - arm_w * 2]);
     }
 
+    translate([0, (w - arm_w) / 2, 0])
+        cube(size=[l, arm_w, h]);
+
+    translate([arm_w / 2, (w - stiffener_w) / 2, h])
+        cube(size=[l - arm_w, stiffener_w, stiffener_h]);
+
     translate([arm_w / 2 - stiffener_w / 2, arm_w / 2 - stiffener_w / 2, h])
     linear_extrude(stiffener_h)
     translate([stiffener_w + stiffener_r, stiffener_w + stiffener_r])
@@ -117,19 +124,11 @@ module base() {
 }
 
 module support() {
-    hull(){
-        translate([arm_l - arm_w / 2, 0, 0])
-            cylinder(h=arm_h, r=arm_w / 2);
-
-        translate([-arm_l + arm_w / 2, 0, 0])
-            cylinder(h=arm_h, r=arm_w / 2);
-    }
-
     stiffener_l = arm_l - arm_w / 2;
     stiffener_h = h * 0.5;
     a = atan(stiffener_h / stiffener_l);
 
-    for(r = [0, 90, 180, 270]) {
+    for(r = [0, 90, 270]) {
         rotate([0, 0, r])
         translate([0, -stiffener_w / 2, arm_h])
             difference() {
